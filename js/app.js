@@ -1,13 +1,13 @@
-function generateHashCode(event) {
+document.getElementById('registerForm').addEventListener('submit', function(event) {
     event.preventDefault();
-
+  
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     const hashedPassword = CryptoJS.SHA256(password).toString();
-
+  
     // Save the username and hashed password to the Neon-hosted PostgreSQL database
     const request = new XMLHttpRequest();
-    request.open('POST', '/register');
+    request.open('POST', 'http://localhost:3000/register'); // Replace with your server URL
     request.setRequestHeader('Content-Type', 'application/json');
     request.onload = function() {
       if (request.status === 200) {
@@ -17,4 +17,4 @@ function generateHashCode(event) {
       }
     };
     request.send(JSON.stringify({ username, hashedPassword }));
-  }
+  });
