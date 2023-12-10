@@ -1,20 +1,39 @@
-document.getElementById('registerForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-  
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const hashedPassword = CryptoJS.SHA256(password).toString();
-  
-    // Save the username and hashed password to the Neon-hosted PostgreSQL database
-    const request = new XMLHttpRequest();
-    request.open('POST', 'http://localhost:3000/register'); // Replace with your server URL
-    request.setRequestHeader('Content-Type', 'application/json');
-    request.onload = function() {
-      if (request.status === 200) {
-        document.getElementById('message').textContent = 'User saved successfully.';
-      } else {
-        document.getElementById('message').textContent = 'Error saving user.';
-      }
+const { Client } = require('pg');
+
+const connectionString = 'postgresql://nurikflexc:W6CtGvQmI3Fp@ep-small-cherry-31928313.eu-central-1.aws.neon.tech/fully_working_register?sslmode=require';
+
+let password = document.getElementById('password').innerText;
+const username = document.getElementById('username').innerText;
+const hashedPassword = hashPassword(password).toString();
+
+const client = new Client({
+  connectionString
+});
+
+client.connect()
+  .then(() => {
+    const query = {
+      text: 'INSERT INTO users (username, hashcode) VALUES ($1, $2)',
+      values: [username, hashedPassword]
     };
-    request.send(JSON.stringify({ username, hashedPassword }));
+
+    return client.query(query);
+  })
+  .then(() => {
+    console.log('Hashed password saved successfully');
+  })
+  .catch(error => {
+    console.error('Error saving hashed password:', error);
+  })
+  .finally(() => {
+    client.end();
   });
+
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashedPassword = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+    return hashedPassword;
+  }
